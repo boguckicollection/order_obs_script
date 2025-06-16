@@ -12,15 +12,33 @@ from email.header import decode_header
 from email.utils import parsedate_to_datetime
 from bs4 import BeautifulSoup
 
+
+def load_env_file(path: str = ".env") -> None:
+    """Load environment variables from a simple .env file."""
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key, value)
+
 # === KONFIGURACJA ===
-IMAP_SERVER = 'imap.gmail.com'
-EMAIL_ACCOUNT = 'boguckicollection@gmail.com'
-PASSWORD = 'tbitweuhanpcbbji'
-SEARCH_PHRASE = 'twój przedmiot został sprzedany'
-FOLDER = 'Vinted/Sprzedane'
-OUTPUT_PATH = r"E:\MOJE PRIV\skrypt\vinted_counter\orders.json"
-CARDS_OUTPUT_PATH = r"E:\MOJE PRIV\skrypt\vinted_counter\latest_order_cards.json"
-API_KEY = "9f7598d8-6037-40ee-aaca-8e71982099e1"
+load_env_file()
+
+IMAP_SERVER = os.getenv("IMAP_SERVER", "imap.gmail.com")
+EMAIL_ACCOUNT = os.getenv("EMAIL_ACCOUNT", "")
+PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+SEARCH_PHRASE = os.getenv(
+    "SEARCH_PHRASE", "twój przedmiot został sprzedany"
+)
+FOLDER = os.getenv("FOLDER", "Vinted/Sprzedane")
+OUTPUT_PATH = os.getenv("OUTPUT_PATH", "orders.json")
+CARDS_OUTPUT_PATH = os.getenv("CARDS_OUTPUT_PATH", "latest_order_cards.json")
+API_KEY = os.getenv("API_KEY", "")
 
 def decode_mime_words(s):
     decoded_fragments = decode_header(s)
