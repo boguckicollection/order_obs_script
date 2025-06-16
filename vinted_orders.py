@@ -105,7 +105,12 @@ def extract_cards_from_body(body):
     # W treści wiadomości karty mogą mieć format np.
     # "Hydreigon ex (SVP 119)" lub "Hydreigon ex (SVP 119/198)".
     # Dotychczasowy wzorzec nie obsługiwał znaków takich jak "-" czy "/".
-    pattern = r"([A-Za-z0-9][A-Za-z0-9 ':,-]*[A-Za-z0-9])\s*\(([A-Za-z0-9-]+)\s+#?([A-Za-z0-9/]+)\)"
+    # Some Pokémon names contain letters with diacritics (e.g. "Pokémon").
+    # Allow a broader range of unicode letters so such names are detected.
+    pattern = (
+        r"([\wÀ-ÖØ-öø-ÿ][\wÀ-ÖØ-öø-ÿ ':,-]*[\wÀ-ÖØ-öø-ÿ])\s*"
+        r"\(([A-Za-z0-9-]+)\s+#?([A-Za-z0-9/]+)\)"
+    )
     matches = re.findall(pattern, text, flags=re.IGNORECASE)
     print(f"🔍 Znaleziono {len(matches)} kart w treści e-maila.")
     results = []
