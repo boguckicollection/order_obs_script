@@ -54,8 +54,11 @@ def decode_mime_words(s):
 def extract_cards_from_body(body):
     soup = BeautifulSoup(body, "html.parser")
     text = soup.get_text()
-    pattern = r"(.+?)\s*\((\w+)\s+(\w+)\)"
-    matches = re.findall(pattern, text)
+    # W treści wiadomości karty mogą mieć format np.
+    # "Hydreigon ex (SVP 119)" lub "Hydreigon ex (SVP 119/198)".
+    # Dotychczasowy wzorzec nie obsługiwał znaków takich jak "-" czy "/".
+    pattern = r"(.+?)\s*\(([A-Za-z0-9-]+)\s+#?([A-Za-z0-9/]+)\)"
+    matches = re.findall(pattern, text, flags=re.IGNORECASE)
     print(f"🔍 Znaleziono {len(matches)} kart w treści e-maila.")
     results = []
 
