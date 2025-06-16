@@ -222,8 +222,11 @@ def get_vinted_orders(cache):
         mail.select(FOLDER)
 
         last_uid = cache.get("last_uid", 0)
-        since_date = (now - timedelta(days=SEARCH_DAYS)).strftime("%d-%b-%Y")
-        status, data = mail.uid("search", None, f"SINCE {since_date}")
+        if SEARCH_DAYS > 0:
+            since_date = (now - timedelta(days=SEARCH_DAYS)).strftime("%d-%b-%Y")
+            status, data = mail.uid("search", None, f"SINCE {since_date}")
+        else:
+            status, data = mail.uid("search", None, "ALL")
         if status != "OK":
             print("❌ Nie można pobrać wiadomości.")
             return cache

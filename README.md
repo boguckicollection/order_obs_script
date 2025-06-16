@@ -32,6 +32,9 @@ API_KEY=klucz-do-api
 SEARCH_DAYS=10
 ```
 
+Wartość `SEARCH_DAYS` określa liczbę dni wstecz, z których pobierane są
+wiadomości. Ustaw `0`, aby przeszukać całą skrzynkę bez ograniczenia daty.
+
 2. Pliki wyjściowe (JSON/HTML) zostaną zapisane w lokalizacjach podanych w konfiguracji.
 
 ## Uruchomienie
