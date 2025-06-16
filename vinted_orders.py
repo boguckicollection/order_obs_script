@@ -51,6 +51,36 @@ def decode_mime_words(s):
         for fragment, encoding in decoded_fragments
     )
 
+
+def search_card_in_api(name, number):
+    """Search for a card in the API using a normalized name and number."""
+    number = re.sub(r"^\D+", "", number).lstrip("0")
+    name = name.strip().replace(" ex", "-EX").replace(" vmax", "-VMAX").replace(" v", "-V")
+
+    query = f'name:"{name}" number:{number}'
+    headers = {"X-Api-Key": API_KEY}
+
+    print(f"🔎 Zapytanie: {query}")
+    try:
+        r = requests.get(
+            "https://api.pokemontcg.io/v2/cards",
+            headers=headers,
+            params={"q": query}
+        )
+        if r.status_code == 200:
+            data = r.json()
+            if data["data"]:
+                card = data["data"][0]
+                return {
+                    "name": card["name"],
+                    "set": card["set"]["id"],
+                    "number": card["number"],
+                    "image": card["images"]["large"]
+                }
+    except Exception as e:
+        print(f"❌ Błąd API ({name} {number}): {e}")
+    return None
+
 def extract_cards_from_body(body):
     soup = BeautifulSoup(body, "html.parser")
     text = soup.get_text()
@@ -63,40 +93,15 @@ def extract_cards_from_body(body):
     results = []
 
     for name, set_code, number in matches:
-        name = name.strip()
-        query = f'name:"{name}" set.id:{set_code} number:{number}'
-        headers = {"X-Api-Key": API_KEY}
-
-        try:
-            r = requests.get(
-                "https://api.pokemontcg.io/v2/cards",
-                headers=headers,
-                params={"q": query},
+        card = search_card_in_api(name, number)
+        if card:
+            results.append(card)
+            print(f"✅ Dodano kartę: {card['name']} ({card['set']} {card['number']})")
+        else:
+            print(
+                f"❌ Nie znaleziono karty {name} ({set_code} {number}). "
+                "Sprawdź set.id i numer."
             )
-            if r.status_code == 200:
-                data = r.json()
-                if data["data"]:
-                    card = data["data"][0]
-                    results.append({
-                        "name": card["name"],
-                        "set": card["set"]["id"],
-                        "number": card["number"],
-                        "image": card["images"]["large"]
-                    })
-                    print(
-                        f"✅ Dodano kartę: {card['name']} ({card['set']['id']} {card['number']})"
-                    )
-                else:
-                    print(
-                        f"❌ Nie znaleziono karty {name} ({set_code} {number}). "
-                        "Sprawdź set.id i numer."
-                    )
-            else:
-                print(
-                    f"❌ Błąd API {r.status_code} dla karty {name} ({set_code} {number})"
-                )
-        except Exception as e:
-            print(f"❌ Błąd pobierania karty '{name}': {e}")
     return results
 
 def load_cache():
