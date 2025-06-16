@@ -41,6 +41,7 @@ CARDS_OUTPUT_PATH = os.getenv("CARDS_OUTPUT_PATH", "latest_order_cards.json")
 CARDS_CACHE_PATH = os.getenv("CARDS_CACHE_PATH", "cards_cache.json")
 CARDS_HTML_PATH = os.getenv("CARDS_HTML_PATH", "cards_count.html")
 API_KEY = os.getenv("API_KEY", "")
+SEARCH_DAYS = int(os.getenv("SEARCH_DAYS", "2"))
 
 def decode_mime_words(s):
     decoded_fragments = decode_header(s)
@@ -137,12 +138,13 @@ def get_vinted_orders(cache):
         mail.select(FOLDER)
 
         last_uid = cache.get("last_uid", 0)
-        status, data = mail.uid("search", None, f"UID {last_uid + 1}:*")
+        since_date = (now - timedelta(days=SEARCH_DAYS)).strftime("%d-%b-%Y")
+        status, data = mail.uid("search", None, f"SINCE {since_date}")
         if status != "OK":
             print("❌ Nie można pobrać wiadomości.")
             return cache
 
-        uids = data[0].split()
+        uids = [uid for uid in data[0].split() if int(uid) > last_uid]
         print(f"📬 Nowe wiadomości: {len(uids)}")
 
         for uid in uids:
