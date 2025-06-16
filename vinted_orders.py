@@ -34,7 +34,7 @@ EMAIL_ACCOUNT = os.getenv("EMAIL_ACCOUNT", "")
 PASSWORD = os.getenv("EMAIL_PASSWORD", "")
 SEARCH_PHRASE = os.getenv(
     "SEARCH_PHRASE", "twój przedmiot został sprzedany"
-)
+).lower()
 FOLDER = os.getenv("FOLDER", "Vinted/Sprzedane")
 OUTPUT_PATH = os.getenv("OUTPUT_PATH", "orders.json")
 CARDS_OUTPUT_PATH = os.getenv("CARDS_OUTPUT_PATH", "latest_order_cards.json")
@@ -125,6 +125,9 @@ def write_cards_html(cards):
         for name, count in sorted(cards.items(), key=lambda x: x[0]):
             lines.append(f"<tr><td>{name}</td><td>{count}</td></tr>")
         lines.append("</table></body></html>")
+        html_dir = os.path.dirname(CARDS_HTML_PATH)
+        if html_dir:
+            os.makedirs(html_dir, exist_ok=True)
         with open(CARDS_HTML_PATH, 'w', encoding='utf-8') as f:
             f.write("\n".join(lines))
         print(f"✅ Zapisano {CARDS_HTML_PATH}")
@@ -137,6 +140,7 @@ def get_vinted_orders(cache):
     today = now.date()
     newest_cards = []
     newest_date = None
+    mail = None
 
     try:
         mail = imaplib.IMAP4_SSL(IMAP_SERVER)
@@ -229,7 +233,14 @@ def get_vinted_orders(cache):
 
     except Exception as e:
         print("❌ Błąd połączenia z IMAP:", e)
-        return 0, 0
+        return cache
+
+    finally:
+        if mail:
+            try:
+                mail.logout()
+            except Exception:
+                pass
 
 def write_json_from_cache(cache):
     try:
