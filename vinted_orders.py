@@ -61,11 +61,14 @@ def extract_cards_from_body(body):
     for name, set_code, number in matches:
         name = name.strip()
         query = f'name:"{name}" set.id:{set_code} number:{number}'
-        url = f'https://api.pokemontcg.io/v2/cards?q={query}'
-        headers = { "X-Api-Key": API_KEY }
+        headers = {"X-Api-Key": API_KEY}
 
         try:
-            r = requests.get(url, headers=headers)
+            r = requests.get(
+                "https://api.pokemontcg.io/v2/cards",
+                headers=headers,
+                params={"q": query},
+            )
             if r.status_code == 200:
                 data = r.json()
                 if data["data"]:
@@ -99,6 +102,9 @@ def load_cache():
 
 def save_cache(cache):
     try:
+        cache_dir = os.path.dirname(CARDS_CACHE_PATH)
+        if cache_dir:
+            os.makedirs(cache_dir, exist_ok=True)
         with open(CARDS_CACHE_PATH, 'w', encoding='utf-8') as f:
             json.dump(cache, f, indent=2, ensure_ascii=False)
     except Exception as e:
