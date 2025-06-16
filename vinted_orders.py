@@ -38,6 +38,8 @@ SEARCH_PHRASE = os.getenv(
 FOLDER = os.getenv("FOLDER", "Vinted/Sprzedane")
 OUTPUT_PATH = os.getenv("OUTPUT_PATH", "orders.json")
 CARDS_OUTPUT_PATH = os.getenv("CARDS_OUTPUT_PATH", "latest_order_cards.json")
+CARDS_CACHE_PATH = os.getenv("CARDS_CACHE_PATH", "cards_cache.json")
+CARDS_HTML_PATH = os.getenv("CARDS_HTML_PATH", "cards_count.html")
 API_KEY = os.getenv("API_KEY", "")
 
 def decode_mime_words(s):
@@ -78,10 +80,54 @@ def extract_cards_from_body(body):
             print(f"❌ Błąd pobierania karty '{name}': {e}")
     return results
 
-def get_vinted_orders():
+def load_cache():
+    if os.path.exists(CARDS_CACHE_PATH):
+        try:
+            with open(CARDS_CACHE_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {
+        "last_uid": 0,
+        "order_count": 0,
+        "today_count": 0,
+        "today_date": datetime.now().strftime("%Y-%m-%d"),
+        "cards": {}
+    }
+
+
+def save_cache(cache):
+    try:
+        with open(CARDS_CACHE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(cache, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"❌ Błąd zapisu cache: {e}")
+
+
+def write_cards_html(cards):
+    try:
+        lines = [
+            "<!DOCTYPE html>",
+            "<html lang=\"pl\">",
+            "<head><meta charset=\"UTF-8\"><title>Sprzedane karty</title>",
+            "<style>body{font-family:Arial;background:transparent;color:white;}",
+            "table{border-collapse:collapse;}td,th{border:1px solid white;padding:4px;}" ,
+            "</style></head><body>",
+            "<table><tr><th>Karta</th><th>Ilość</th></tr>"
+        ]
+        for name, count in sorted(cards.items(), key=lambda x: x[0]):
+            lines.append(f"<tr><td>{name}</td><td>{count}</td></tr>")
+        lines.append("</table></body></html>")
+        with open(CARDS_HTML_PATH, 'w', encoding='utf-8') as f:
+            f.write("\n".join(lines))
+        print(f"✅ Zapisano {CARDS_HTML_PATH}")
+    except Exception as e:
+        print(f"❌ Błąd zapisu HTML: {e}")
+
+
+def get_vinted_orders(cache):
     now = datetime.now().astimezone()
-    count = 0
-    today_count = 0
+    today = now.date()
     newest_cards = []
     newest_date = None
 
@@ -90,17 +136,18 @@ def get_vinted_orders():
         mail.login(EMAIL_ACCOUNT, PASSWORD)
         mail.select(FOLDER)
 
-        status, data = mail.search(None, "ALL")
+        last_uid = cache.get("last_uid", 0)
+        status, data = mail.uid("search", None, f"UID {last_uid + 1}:*")
         if status != "OK":
             print("❌ Nie można pobrać wiadomości.")
-            return 0, 0
+            return cache
 
-        message_ids = data[0].split()
-        print(f"📬 Wiadomości do sprawdzenia: {len(message_ids)}")
+        uids = data[0].split()
+        print(f"📬 Nowe wiadomości: {len(uids)}")
 
-        for i, msg_id in enumerate(message_ids):
+        for uid in uids:
             try:
-                status, msg_data = mail.fetch(msg_id, "(RFC822)")
+                status, msg_data = mail.uid("fetch", uid, "(RFC822)")
                 if status != "OK":
                     continue
 
@@ -115,34 +162,47 @@ def get_vinted_orders():
                 try:
                     msg_datetime = parsedate_to_datetime(date_header).astimezone()
                     msg_date = msg_datetime.date()
-                except:
-                    continue
+                except Exception:
+                    msg_datetime = now
+                    msg_date = today
 
                 if SEARCH_PHRASE in subject:
-                    count += 1
-                    if msg_date == now.date():
-                        today_count += 1
+                    cache["order_count"] = cache.get("order_count", 0) + 1
+
+                    if cache.get("today_date") != str(today):
+                        cache["today_date"] = str(today)
+                        cache["today_count"] = 0
+                    if msg_date == today:
+                        cache["today_count"] = cache.get("today_count", 0) + 1
 
                     body = ""
                     if msg.is_multipart():
                         for part in msg.walk():
                             content_type = part.get_content_type()
                             if content_type in ["text/plain", "text/html"]:
-                                body += part.get_payload(decode=True).decode(errors="ignore")
+                                payload = part.get_payload(decode=True)
+                                if payload:
+                                    body += payload.decode(errors="ignore")
                     else:
                         body = msg.get_payload(decode=True).decode(errors="ignore")
 
                     cards = extract_cards_from_body(body)
                     if cards:
+                        for card in cards:
+                            name = card["name"]
+                            cache.setdefault("cards", {})
+                            cache["cards"][name] = cache["cards"].get(name, 0) + 1
                         if newest_date is None or msg_datetime > newest_date:
                             newest_cards = cards
                             newest_date = msg_datetime
 
-            except Exception as e:
-                print(f"⚠️ Błąd wiadomości {i + 1}: {e}")
+                last_uid = max(last_uid, int(uid))
 
-        print(f"✅ Zamówienia ogółem: {count}")
-        print(f"📅 Zamówienia dziś: {today_count}")
+            except Exception as e:
+                uid_str = uid.decode() if isinstance(uid, bytes) else str(uid)
+                print(f"⚠️ Błąd wiadomości UID {uid_str}: {e}")
+
+        cache["last_uid"] = last_uid
 
         if newest_cards:
             try:
@@ -150,24 +210,24 @@ def get_vinted_orders():
                 if cards_dir:
                     os.makedirs(cards_dir, exist_ok=True)
                 with open(CARDS_OUTPUT_PATH, 'w', encoding='utf-8') as f:
-                    json.dump(newest_cards, f, indent=2)
+                    json.dump(newest_cards, f, indent=2, ensure_ascii=False)
                 print(f"💾 Zapisano {len(newest_cards)} kart do latest_order_cards.json")
             except Exception as e:
                 print(f"❌ Błąd zapisu latest_order_cards.json: {e}")
         else:
             print("⚠️ Nie znaleziono żadnych kart do zapisania.")
 
-        return count, today_count
+        return cache
 
     except Exception as e:
         print("❌ Błąd połączenia z IMAP:", e)
         return 0, 0
 
-def write_json(order_count, today_count):
+def write_json_from_cache(cache):
     try:
         data = {
-            "count": order_count,
-            "today": today_count,
+            "count": cache.get("order_count", 0),
+            "today": cache.get("today_count", 0),
             "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         output_dir = os.path.dirname(OUTPUT_PATH)
@@ -181,10 +241,13 @@ def write_json(order_count, today_count):
 
 if __name__ == "__main__":
     try:
+        cache = load_cache()
         while True:
             print("\n⏳ Sprawdzanie zamówień...")
-            count, today = get_vinted_orders()
-            write_json(count, today)
+            cache = get_vinted_orders(cache)
+            save_cache(cache)
+            write_json_from_cache(cache)
+            write_cards_html(cache.get("cards", {}))
             print("⏱ Kolejne sprawdzenie za 60 sekund.\n")
             time.sleep(60)
     except KeyboardInterrupt:
