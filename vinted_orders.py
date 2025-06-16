@@ -80,7 +80,6 @@ def extract_cards_from_body(body):
 
 def get_vinted_orders():
     now = datetime.now().astimezone()
-    two_days_ago = now - timedelta(days=2)
     count = 0
     today_count = 0
     newest_cards = []
@@ -124,21 +123,20 @@ def get_vinted_orders():
                     if msg_date == now.date():
                         today_count += 1
 
-                    if msg_datetime >= two_days_ago:
-                        body = ""
-                        if msg.is_multipart():
-                            for part in msg.walk():
-                                content_type = part.get_content_type()
-                                if content_type in ["text/plain", "text/html"]:
-                                    body += part.get_payload(decode=True).decode(errors="ignore")
-                        else:
-                            body = msg.get_payload(decode=True).decode(errors="ignore")
+                    body = ""
+                    if msg.is_multipart():
+                        for part in msg.walk():
+                            content_type = part.get_content_type()
+                            if content_type in ["text/plain", "text/html"]:
+                                body += part.get_payload(decode=True).decode(errors="ignore")
+                    else:
+                        body = msg.get_payload(decode=True).decode(errors="ignore")
 
-                        cards = extract_cards_from_body(body)
-                        if cards:
-                            if newest_date is None or msg_datetime > newest_date:
-                                newest_cards = cards
-                                newest_date = msg_datetime
+                    cards = extract_cards_from_body(body)
+                    if cards:
+                        if newest_date is None or msg_datetime > newest_date:
+                            newest_cards = cards
+                            newest_date = msg_datetime
 
             except Exception as e:
                 print(f"⚠️ Błąd wiadomości {i + 1}: {e}")
