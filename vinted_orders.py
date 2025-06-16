@@ -55,7 +55,7 @@ def decode_mime_words(s):
 def search_card_in_api(name, number):
     """Search for a card in the API using a normalized name and number."""
     number = re.sub(r"^\D+", "", number).lstrip("0")
-    name = name.strip().replace(" ex", "-EX").replace(" vmax", "-VMAX").replace(" v", "-V")
+    name = name.strip()
 
     query = f'name:"{name}" number:{number}'
     headers = {"X-Api-Key": API_KEY}
@@ -81,25 +81,39 @@ def search_card_in_api(name, number):
         print(f"❌ Błąd API ({name} {number}): {e}")
     return None
 
+
+def clean_card_name(name: str) -> str:
+    """Try to remove user names or quantities from the card name."""
+    name = name.strip()
+    # Remove quantity like "1x "
+    name = re.sub(r'^\d+x\s*', '', name, flags=re.IGNORECASE)
+    # Remove phrases like "aleks1515 kupił(a)"
+    name = re.sub(r'^.*kupi\S*\s+', '', name, flags=re.IGNORECASE)
+    # If a colon is present, take text after it
+    if ':' in name:
+        name = name.split(':')[-1]
+    return name.strip()
+
 def extract_cards_from_body(body):
     soup = BeautifulSoup(body, "html.parser")
     text = soup.get_text()
     # W treści wiadomości karty mogą mieć format np.
     # "Hydreigon ex (SVP 119)" lub "Hydreigon ex (SVP 119/198)".
     # Dotychczasowy wzorzec nie obsługiwał znaków takich jak "-" czy "/".
-    pattern = r"(.+?)\s*\(([A-Za-z0-9-]+)\s+#?([A-Za-z0-9/]+)\)"
+    pattern = r"([A-Za-z0-9][A-Za-z0-9 ':,-]*[A-Za-z0-9])\s*\(([A-Za-z0-9-]+)\s+#?([A-Za-z0-9/]+)\)"
     matches = re.findall(pattern, text, flags=re.IGNORECASE)
     print(f"🔍 Znaleziono {len(matches)} kart w treści e-maila.")
     results = []
 
     for name, set_code, number in matches:
-        card = search_card_in_api(name, number)
+        clean_name = clean_card_name(name)
+        card = search_card_in_api(clean_name, number)
         if card:
             results.append(card)
             print(f"✅ Dodano kartę: {card['name']} ({card['set']} {card['number']})")
         else:
             print(
-                f"❌ Nie znaleziono karty {name} ({set_code} {number}). "
+                f"❌ Nie znaleziono karty {clean_name} ({set_code} {number}). "
                 "Sprawdź set.id i numer."
             )
     return results
