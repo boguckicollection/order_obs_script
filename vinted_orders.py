@@ -54,7 +54,12 @@ def decode_mime_words(s):
 
 def search_card_in_api(name, number):
     """Search for a card in the API using a normalized name and number."""
-    number = re.sub(r"^\D+", "", number).lstrip("0")
+    # Preserve possible set prefixes in the card number (e.g. "SV21", "SWSH105")
+    # while removing spaces and any trailing set size like "119/198".
+    number = number.strip().lstrip("#")
+    number = number.replace(" ", "")
+    if "/" in number:
+        number = number.split("/")[0]
     name = name.strip()
 
     query = f'name:"{name}" number:{number}'
