@@ -40,6 +40,7 @@ OUTPUT_PATH = os.getenv("OUTPUT_PATH", "orders.json")
 CARDS_OUTPUT_PATH = os.getenv("CARDS_OUTPUT_PATH", "latest_order_cards.json")
 CARDS_CACHE_PATH = os.getenv("CARDS_CACHE_PATH", "cards_cache.json")
 CARDS_HTML_PATH = os.getenv("CARDS_HTML_PATH", "cards_count.html")
+ALL_CARDS_PATH = os.getenv("ALL_CARDS_PATH", "all_order_cards.json")
 API_KEY = os.getenv("API_KEY", "")
 SEARCH_DAYS = int(os.getenv("SEARCH_DAYS", "2"))
 
@@ -88,7 +89,9 @@ def load_cache():
     if os.path.exists(CARDS_CACHE_PATH):
         try:
             with open(CARDS_CACHE_PATH, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                cache = json.load(f)
+                cache.setdefault("all_cards", [])
+                return cache
         except Exception:
             pass
     return {
@@ -96,7 +99,8 @@ def load_cache():
         "order_count": 0,
         "today_count": 0,
         "today_date": datetime.now().strftime("%Y-%m-%d"),
-        "cards": {}
+        "cards": {},
+        "all_cards": []
     }
 
 
@@ -105,6 +109,7 @@ def save_cache(cache):
         cache_dir = os.path.dirname(CARDS_CACHE_PATH)
         if cache_dir:
             os.makedirs(cache_dir, exist_ok=True)
+        cache.setdefault("all_cards", [])
         with open(CARDS_CACHE_PATH, 'w', encoding='utf-8') as f:
             json.dump(cache, f, indent=2, ensure_ascii=False)
     except Exception as e:
@@ -140,6 +145,7 @@ def get_vinted_orders(cache):
     today = now.date()
     newest_cards = []
     newest_date = None
+    new_cards_added = False
     mail = None
 
     try:
@@ -204,6 +210,9 @@ def get_vinted_orders(cache):
                             name = card["name"]
                             cache.setdefault("cards", {})
                             cache["cards"][name] = cache["cards"].get(name, 0) + 1
+                        cache.setdefault("all_cards", [])
+                        cache["all_cards"].extend(cards)
+                        new_cards_added = True
                         if newest_date is None or msg_datetime > newest_date:
                             newest_cards = cards
                             newest_date = msg_datetime
@@ -228,6 +237,17 @@ def get_vinted_orders(cache):
                 print(f"❌ Błąd zapisu latest_order_cards.json: {e}")
         else:
             print("⚠️ Nie znaleziono żadnych kart do zapisania.")
+
+        if new_cards_added:
+            try:
+                all_dir = os.path.dirname(ALL_CARDS_PATH)
+                if all_dir:
+                    os.makedirs(all_dir, exist_ok=True)
+                with open(ALL_CARDS_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(cache.get("all_cards", []), f, indent=2, ensure_ascii=False)
+                print(f"💾 Zaktualizowano {ALL_CARDS_PATH}")
+            except Exception as e:
+                print(f"❌ Błąd zapisu {ALL_CARDS_PATH}: {e}")
 
         return cache
 
