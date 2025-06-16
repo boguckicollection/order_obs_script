@@ -159,11 +159,19 @@ def save_cache(cache):
         print(f"❌ Błąd zapisu cache: {e}")
 
 
-def write_cards_html(cards):
+def write_cards_html(cards, all_cards=None):
     """Write a small summary HTML with total sold cards and top 3 list."""
     try:
-        total = sum(cards.values())
-        top = sorted(cards.items(), key=lambda x: x[1], reverse=True)[:3]
+        if all_cards:
+            counts = {}
+            for card in all_cards:
+                full = f"{card['name']} ({card['set']} {card['number']})"
+                counts[full] = counts.get(full, 0) + 1
+        else:
+            counts = dict(cards)
+
+        total = sum(counts.values())
+        top = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:3]
 
         lines = [
             "<!DOCTYPE html>",
@@ -172,20 +180,23 @@ def write_cards_html(cards):
             "<meta charset=\"UTF-8\">",
             "<title>Sprzedane karty</title>",
             (
-                "<style>body{font-family:Arial;background:transparent;color:white;}"
-                "ol{margin:0;padding-left:1em;}li{margin-bottom:2px;}"
-                ".total{font-size:24px;margin-bottom:8px;}"
+                "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">"
+                "<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>"
+                "<link href=\"https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap\" rel=\"stylesheet\">"
+                "<style>body{margin:0;padding:0;background:transparent;color:white;font-family:'Montserrat',Arial,sans-serif;}"
+                "#container{padding:20px;border-radius:16px;background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);display:inline-block;}"
+                ".total{font-size:28px;margin-bottom:8px;font-weight:600;text-align:center;}"
+                "ol{margin:0;padding-left:20px;font-size:22px;}li{margin-bottom:4px;}"
                 "</style>"
             ),
             "</head><body>",
-            f"<div class=\"total\">Łącznie sprzedanych kart: {total}</div>",
-            "<ol>"
+            f"<div id=\"container\"><div class=\"total\">Łącznie sprzedanych kart: {total}</div><ol>"
         ]
 
         for name, count in top:
             lines.append(f"<li>{name} – {count}</li>")
 
-        lines.append("</ol></body></html>")
+        lines.append("</ol></div></body></html>")
 
         html_dir = os.path.dirname(CARDS_HTML_PATH)
         if html_dir:
@@ -343,7 +354,7 @@ if __name__ == "__main__":
             cache = get_vinted_orders(cache)
             save_cache(cache)
             write_json_from_cache(cache)
-            write_cards_html(cache.get("cards", {}))
+            write_cards_html(cache.get("cards", {}), cache.get("all_cards", []))
             print("⏱ Kolejne sprawdzenie za 60 sekund.\n")
             time.sleep(60)
     except KeyboardInterrupt:
