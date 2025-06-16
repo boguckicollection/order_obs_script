@@ -130,11 +130,14 @@
     const video = document.getElementById("transition");
     video.style.opacity = 1;
     video.currentTime = 0;
-    video.play();
+    await video.play();
 
-    setTimeout(() => {
-      video.style.opacity = 0;
-    }, 4000);
+    await new Promise(resolve => {
+      video.onended = () => {
+        video.style.opacity = 0;
+        resolve();
+      };
+    });
 
     for (const card of cards) {
       await showCard(card);
