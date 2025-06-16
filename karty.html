@@ -43,7 +43,14 @@
       border-radius: 16px;
       background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(8px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      box-shadow: none;
+      transition: opacity 0.5s ease, box-shadow 0.5s ease;
+    }
+
+    #card-container.show {
+      opacity: 1;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
     }
 
     #card-name {
@@ -60,7 +67,7 @@
       object-fit: contain;
       opacity: 0;
       position: relative;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       border-radius: 12px;
     }
 
@@ -140,6 +147,8 @@
 
   async function playTransition(cards) {
     const video = document.getElementById("transition");
+    const container = document.getElementById("card-container");
+    container.classList.remove("show");
     video.style.opacity = 1;
     video.currentTime = 0;
     await video.play();
@@ -147,6 +156,7 @@
     await new Promise(resolve => {
       video.onended = () => {
         video.style.opacity = 0;
+        container.classList.add("show");
         resolve();
       };
     });
@@ -154,6 +164,7 @@
     for (const card of cards) {
       await showCard(card);
     }
+    container.classList.remove("show");
   }
 
   async function fetchAndDisplay() {
