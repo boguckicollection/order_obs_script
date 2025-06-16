@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Transition Vinted</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    #transition {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80vw;
+      height: auto;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: opacity 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="transition" src="Transition.webm" type="video/webm" preload="auto"></video>
+
+  <script>
+    let count = 0;
+
+    async function fetchCount() {
+      try {
+        const response = await fetch("orders.json?ts=" + new Date().getTime());
+        const data = await response.json();
+        const newCount = data.count;
+
+        const transitionEl = document.getElementById('transition');
+
+        if (newCount !== count) {
+          console.log("🔔 Nowe zamówienie! Pokazuję Transition.webm");
+
+          transitionEl.style.opacity = '1';
+          transitionEl.currentTime = 0;
+          transitionEl.play();
+
+          setTimeout(() => {
+            transitionEl.style.opacity = '0';
+          }, 4000); // 4 sekundy np.
+
+          count = newCount;
+        }
+      } catch (err) {
+        console.error("Błąd odczytu JSON:", err);
+      }
+    }
+
+    fetchCount();
+    setInterval(fetchCount, 1000); // co 1 sekunda — żeby było szybkie wykrycie
+  </script>
+
+</body>
+</html>

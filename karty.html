@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Pokémon Zamówienie</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    #transition {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+      object-fit: cover;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    #card-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      height: auto;
+      z-index: 20;
+    }
+
+    #card-name {
+      font-size: 28px;
+      margin-bottom: 12px;
+      opacity: 0;
+    }
+
+    #card-image {
+      width: 100%;
+      max-height: 550px;
+      object-fit: contain;
+      opacity: 0;
+      position: relative;
+    }
+
+    .fade-in-left {
+      animation: fadeInLeft 1s forwards;
+    }
+
+    .fade-out-right {
+      animation: fadeOutRight 1s forwards;
+    }
+
+    @keyframes fadeInLeft {
+      from {
+        transform: translateX(-200px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(200px);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+
+<div id="card-container">
+  <div id="card-name"></div>
+  <img id="card-image" src="" alt="Karta Pokémon" />
+</div>
+
+<script>
+  let lastCount = 0;
+
+  async function loadCardData() {
+    const r = await fetch("latest_order_cards.json?ts=" + new Date().getTime());
+    const data = await r.json();
+    return data;
+  }
+
+  function showCard(card) {
+    const nameEl = document.getElementById("card-name");
+    const imageEl = document.getElementById("card-image");
+
+    return new Promise(resolve => {
+      nameEl.textContent = card.name;
+      imageEl.src = card.image;
+
+      nameEl.className = "fade-in-left";
+      imageEl.className = "fade-in-left";
+
+      setTimeout(() => {
+        nameEl.className = "fade-out-right";
+        imageEl.className = "fade-out-right";
+      }, 3000);
+
+      setTimeout(() => {
+        nameEl.className = "";
+        imageEl.className = "";
+        resolve();
+      }, 4000);
+    });
+  }
+
+  async function playTransition(cards) {
+    const video = document.getElementById("transition");
+    video.style.opacity = 1;
+    video.currentTime = 0;
+    video.play();
+
+    setTimeout(() => {
+      video.style.opacity = 0;
+    }, 4000);
+
+    for (const card of cards) {
+      await showCard(card);
+    }
+  }
+
+  async function fetchAndDisplay() {
+    try {
+      const r = await fetch("orders.json?ts=" + new Date().getTime());
+      const data = await r.json();
+      const newCount = data.count;
+
+      if (newCount !== lastCount) {
+        const cards = await loadCardData();
+        playTransition(cards);
+        lastCount = newCount;
+      }
+    } catch (e) {
+      console.error("Błąd:", e);
+    }
+  }
+
+  fetchAndDisplay();
+  setInterval(fetchAndDisplay, 2000);
+</script>
+
+</body>
+</html>
