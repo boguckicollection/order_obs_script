@@ -150,19 +150,33 @@ def save_cache(cache):
 
 
 def write_cards_html(cards):
+    """Write a small summary HTML with total sold cards and top 3 list."""
     try:
+        total = sum(cards.values())
+        top = sorted(cards.items(), key=lambda x: x[1], reverse=True)[:3]
+
         lines = [
             "<!DOCTYPE html>",
             "<html lang=\"pl\">",
-            "<head><meta charset=\"UTF-8\"><title>Sprzedane karty</title>",
-            "<style>body{font-family:Arial;background:transparent;color:white;}",
-            "table{border-collapse:collapse;}td,th{border:1px solid white;padding:4px;}" ,
-            "</style></head><body>",
-            "<table><tr><th>Karta</th><th>Ilość</th></tr>"
+            "<head>",
+            "<meta charset=\"UTF-8\">",
+            "<title>Sprzedane karty</title>",
+            (
+                "<style>body{font-family:Arial;background:transparent;color:white;}"
+                "ol{margin:0;padding-left:1em;}li{margin-bottom:2px;}"
+                ".total{font-size:24px;margin-bottom:8px;}"
+                "</style>"
+            ),
+            "</head><body>",
+            f"<div class=\"total\">Łącznie sprzedanych kart: {total}</div>",
+            "<ol>"
         ]
-        for name, count in sorted(cards.items(), key=lambda x: x[0]):
-            lines.append(f"<tr><td>{name}</td><td>{count}</td></tr>")
-        lines.append("</table></body></html>")
+
+        for name, count in top:
+            lines.append(f"<li>{name} – {count}</li>")
+
+        lines.append("</ol></body></html>")
+
         html_dir = os.path.dirname(CARDS_HTML_PATH)
         if html_dir:
             os.makedirs(html_dir, exist_ok=True)
