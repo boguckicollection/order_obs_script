@@ -80,7 +80,18 @@ def extract_cards_from_body(body):
                         "number": card["number"],
                         "image": card["images"]["large"]
                     })
-                    print(f"✅ Dodano kartę: {card['name']} ({card['set']['id']} {card['number']})")
+                    print(
+                        f"✅ Dodano kartę: {card['name']} ({card['set']['id']} {card['number']})"
+                    )
+                else:
+                    print(
+                        f"❌ Nie znaleziono karty {name} ({set_code} {number}). "
+                        "Sprawdź set.id i numer."
+                    )
+            else:
+                print(
+                    f"❌ Błąd API {r.status_code} dla karty {name} ({set_code} {number})"
+                )
         except Exception as e:
             print(f"❌ Błąd pobierania karty '{name}': {e}")
     return results
