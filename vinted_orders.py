@@ -148,6 +148,9 @@ def get_vinted_orders():
 
         if newest_cards:
             try:
+                cards_dir = os.path.dirname(CARDS_OUTPUT_PATH)
+                if cards_dir:
+                    os.makedirs(cards_dir, exist_ok=True)
                 with open(CARDS_OUTPUT_PATH, 'w', encoding='utf-8') as f:
                     json.dump(newest_cards, f, indent=2)
                 print(f"💾 Zapisano {len(newest_cards)} kart do latest_order_cards.json")
@@ -169,7 +172,9 @@ def write_json(order_count, today_count):
             "today": today_count,
             "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+        output_dir = os.path.dirname(OUTPUT_PATH)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
         with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
         print("✅ Zapisano orders.json")
