@@ -42,7 +42,7 @@ CARDS_CACHE_PATH = os.getenv("CARDS_CACHE_PATH", "cards_cache.json")
 CARDS_HTML_PATH = os.getenv("CARDS_HTML_PATH", "cards_count.html")
 ALL_CARDS_PATH = os.getenv("ALL_CARDS_PATH", "all_order_cards.json")
 API_KEY = os.getenv("API_KEY", "")
-SEARCH_DAYS = int(os.getenv("SEARCH_DAYS", "2"))
+SEARCH_DAYS = int(os.getenv("SEARCH_DAYS", "10"))
 
 def decode_mime_words(s):
     decoded_fragments = decode_header(s)
