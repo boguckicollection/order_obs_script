@@ -30,6 +30,9 @@ CARDS_HTML_PATH=/sciezka/do/cards_count.html
 ALL_CARDS_PATH=/sciezka/do/all_order_cards.json
 API_KEY=klucz-do-api
 SEARCH_DAYS=10
+YT_API_KEY=klucz-youtube
+YT_CHANNEL_ID=id-kanalu
+VIDEOS_OUTPUT_PATH=/sciezka/do/videos.json
 ```
 
 Wartość `SEARCH_DAYS` określa liczbę dni wstecz, z których pobierane są
@@ -46,6 +49,16 @@ python vinted_orders.py
 ```
 
 Skrypt będzie cyklicznie sprawdzał nowe wiadomości e‑mail i aktualizował pliki JSON oraz HTML.
+
+### Aktualizacja filmów z YouTube
+
+Do pobrania najnowszych filmów z własnego kanału można użyć skryptu `youtube_videos.py`:
+
+```bash
+python youtube_videos.py
+```
+
+Wymagane są zmienne `YT_API_KEY` oraz `YT_CHANNEL_ID` w pliku `.env`. Wynik zostanie zapisany do `videos.json` (ścieżkę można zmienić w `VIDEOS_OUTPUT_PATH`).
 
 ## Widżety OBS
 
