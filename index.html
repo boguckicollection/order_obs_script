@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Moja kolekcja</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', Arial, sans-serif;
+      background-color: #111;
+      color: #fff;
+      line-height: 1.6;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+    }
+    #stats {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .stat {
+      background: rgba(255,255,255,0.1);
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    #top-cards {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    #cards-list {
+      display: inline-block;
+      text-align: left;
+      font-size: 20px;
+      padding: 0 20px;
+    }
+    #carousel {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    #carousel-container {
+      position: relative;
+      width: 350px;
+      margin: 0 auto;
+    }
+    #carousel-img {
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    }
+    #carousel-name {
+      margin-top: 8px;
+      font-size: 22px;
+      font-weight: 600;
+    }
+    #about, #videos {
+      margin: 40px auto;
+      max-width: 800px;
+      padding: 0 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    a {
+      color: #4ea5ff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Moja kolekcja Pokémon</h1>
+  </header>
+
+  <section id="stats">
+    <div class="stat">Zamówienia: <span id="orders-count">0</span></div>
+    <div class="stat">Łącznie sprzedanych kart: <span id="cards-total">0</span></div>
+  </section>
+
+  <section id="top-cards">
+    <h2>Najczęściej kupowane karty</h2>
+    <ol id="cards-list"></ol>
+  </section>
+
+  <section id="carousel">
+    <h2>Najnowsze sprzedane karty</h2>
+    <div id="carousel-container">
+      <img id="carousel-img" src="" alt="Karta" />
+      <div id="carousel-name"></div>
+    </div>
+  </section>
+
+  <section id="videos">
+    <h2>Streamy i wideo</h2>
+    <p><a href="https://twitch.tv/example" target="_blank" rel="noopener">Mój kanał na Twitchu</a></p>
+    <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;">
+      <iframe width="360" height="202" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video" frameborder="0" allowfullscreen></iframe>
+      <iframe width="360" height="202" src="https://www.youtube.com/embed/9bZkp7q19f0" title="YouTube video" frameborder="0" allowfullscreen></iframe>
+    </div>
+  </section>
+
+  <section id="about">
+    <h2>O mnie</h2>
+    <p>Jestem kolekcjonerem kart Pokémon i dzielę się swoją pasją podczas streamów oraz na YouTube. Na tej stronie znajdziesz statystyki dotyczące mojej sprzedaży oraz najnowsze karty, które trafiły do nowych właścicieli.</p>
+  </section>
+
+  <script>
+    async function loadStats() {
+      try {
+        const ordersRes = await fetch('orders.json?ts=' + Date.now());
+        const orders = await ordersRes.json();
+        document.getElementById('orders-count').textContent = orders.count;
+
+        const cardsRes = await fetch('cards_count.html?ts=' + Date.now());
+        const text = await cardsRes.text();
+        const doc = new DOMParser().parseFromString(text, 'text/html');
+        const totalText = doc.querySelector('.total')?.textContent || '';
+        const match = totalText.match(/(\d+)/);
+        document.getElementById('cards-total').textContent = match ? match[1] : '0';
+
+        const listEl = document.getElementById('cards-list');
+        const items = doc.querySelectorAll('ol li');
+        items.forEach(li => listEl.appendChild(li.cloneNode(true)));
+      } catch (e) {
+        console.error('Błąd pobierania statystyk', e);
+      }
+    }
+
+    async function loadCarousel() {
+      try {
+        const res = await fetch('latest_order_cards.json?ts=' + Date.now());
+        const cards = await res.json();
+        const img = document.getElementById('carousel-img');
+        const name = document.getElementById('carousel-name');
+        if (!Array.isArray(cards) || cards.length === 0) {
+          name.textContent = 'Brak danych';
+          img.style.display = 'none';
+          return;
+        }
+        let idx = 0;
+        function show() {
+          const card = cards[idx];
+          img.src = card.image;
+          name.textContent = card.name;
+          idx = (idx + 1) % cards.length;
+        }
+        show();
+        setInterval(show, 3000);
+      } catch (e) {
+        console.error('Błąd pobierania kart', e);
+      }
+    }
+
+    loadStats();
+    loadCarousel();
+  </script>
+</body>
+</html>
