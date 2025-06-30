@@ -66,6 +66,8 @@ Wymagane są zmienne `YT_API_KEY` oraz `YT_CHANNEL_ID` w pliku `.env`. Wynik zos
 - **alert.html** – odtwarza plik *Transition.webm* w momencie pojawienia się nowego zamówienia.
 - **karty.html** – wyświetla nazwy i grafiki kart Pokémon z najnowszego zamówienia.
 
+Do wyszukiwania kart wykorzystywany jest teraz identyfikator `set.id`, dzięki czemu możliwe jest odnalezienie kart z zagranicznych wersji zestawów.
+
 Pliki te można dodać jako źródło przeglądarki w OBS.
 
 ## Licencja

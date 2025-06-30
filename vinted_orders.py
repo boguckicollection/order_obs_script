@@ -52,8 +52,11 @@ def decode_mime_words(s):
     )
 
 
-def search_card_in_api(name, number):
-    """Search for a card in the API using a normalized name and number."""
+def search_card_in_api(name, number, set_code=None):
+    """Search for a card in the API using a normalized name and number.
+
+    Optionally a set code can be provided to narrow down the results.
+    """
     # Preserve possible set prefixes in the card number (e.g. "SV21", "SWSH105")
     # while removing spaces and any trailing set size like "119/198".
     number = number.strip().lstrip("#")
@@ -62,19 +65,27 @@ def search_card_in_api(name, number):
         number = number.split("/")[0]
     name = name.strip()
 
-    query = f'name:"{name}" number:{number}'
+    queries = []
+    if set_code:
+        queries.append(f"set.id:{set_code} number:{number}")
+    queries.append(f'name:"{name}" number:{number}')
+
     headers = {"X-Api-Key": API_KEY}
 
-    print(f"🔎 Zapytanie: {query}")
-    try:
-        r = requests.get(
-            "https://api.pokemontcg.io/v2/cards",
-            headers=headers,
-            params={"q": query}
-        )
-        if r.status_code == 200:
+    for query in queries:
+        print(f"🔎 Zapytanie: {query}")
+        try:
+            r = requests.get(
+                "https://api.pokemontcg.io/v2/cards",
+                headers=headers,
+                params={"q": query}
+            )
+            if r.status_code != 200:
+                print(f"⚠️ API zwróciło status {r.status_code}")
+                continue
+
             data = r.json()
-            if data["data"]:
+            if data.get("data"):
                 card = data["data"][0]
                 return {
                     "name": card["name"],
@@ -82,8 +93,10 @@ def search_card_in_api(name, number):
                     "number": card["number"],
                     "image": card["images"]["large"]
                 }
-    except Exception as e:
-        print(f"❌ Błąd API ({name} {number}): {e}")
+        except Exception as e:
+            print(f"❌ Błąd API ({name} {number}): {e}")
+            return None
+
     return None
 
 
@@ -117,7 +130,7 @@ def extract_cards_from_body(body):
 
     for name, set_code, number in matches:
         clean_name = clean_card_name(name)
-        card = search_card_in_api(clean_name, number)
+        card = search_card_in_api(clean_name, number, set_code)
         if card:
             results.append(card)
             print(f"✅ Dodano kartę: {card['name']} ({card['set']} {card['number']})")
