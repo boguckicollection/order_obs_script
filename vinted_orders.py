@@ -139,6 +139,14 @@ def extract_cards_from_body(body):
                 f"❌ Nie znaleziono karty {clean_name} ({set_code} {number}). "
                 "Sprawdź set.id i numer."
             )
+            # Fall back to basic info so the card is not skipped
+            results.append({
+                "name": clean_name,
+                "set": set_code,
+                "number": number,
+                "image": None,
+            })
+            print(f"ℹ️ Dodano kartę bez obrazu: {clean_name} ({set_code} {number})")
     return results
 
 def load_cache():
