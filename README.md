@@ -68,6 +68,7 @@ Wymagane są zmienne `YT_API_KEY` oraz `YT_CHANNEL_ID` w pliku `.env`. Wynik zos
 
 Do wyszukiwania kart wykorzystywany jest teraz identyfikator `set.id`, dzięki czemu możliwe jest odnalezienie kart z zagranicznych wersji zestawów.
 Jeżeli danej karty nie uda się odnaleźć w API, jej nazwa wraz z numerem zostanie pokazana w ramce o proporcjach prawdziwej karty.
+Skrypt rozpoznaje teraz nazwy kart zapisane także w innych alfabetach (np. japońskim), dzięki czemu nie zostaną pominięte podczas parsowania wiadomości.
 
 Pliki te można dodać jako źródło przeglądarki w OBS.
 
