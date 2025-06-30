@@ -117,11 +117,12 @@ def extract_cards_from_body(body):
     text = soup.get_text()
     # W treści wiadomości karty mogą mieć format np.
     # "Hydreigon ex (SVP 119)" lub "Hydreigon ex (SVP 119/198)".
-    # Dotychczasowy wzorzec nie obsługiwał znaków takich jak "-" czy "/".
-    # Some Pokémon names contain letters with diacritics (e.g. "Pokémon").
-    # Allow a broader range of unicode letters so such names are detected.
+    # Poprzedni wzorzec obejmował jedynie łacińskie litery, co uniemożliwiało
+    # poprawne wykrywanie kart o nazwach zapisanych np. po japońsku. Teraz
+    # dopasowujemy dowolne znaki do napotkania nawiasu otwierającego, dzięki
+    # czemu parser wychwyci również nazwy w innych alfabetach.
     pattern = (
-        r"([\wÀ-ÖØ-öø-ÿ][\wÀ-ÖØ-öø-ÿ ':,-]*[\wÀ-ÖØ-öø-ÿ])\s*"
+        r"([^()]+?)\s*"
         r"\(([A-Za-z0-9-]+)\s+#?([A-Za-z0-9/]+)\)"
     )
     matches = re.findall(pattern, text, flags=re.IGNORECASE)
