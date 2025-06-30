@@ -69,6 +69,22 @@
       position: relative;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       border-radius: 12px;
+      display: none;
+    }
+
+    #card-placeholder {
+      width: 100%;
+      aspect-ratio: 63 / 88;
+      border: 2px dashed rgba(255,255,255,0.6);
+      border-radius: 12px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 32px;
+      padding: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      opacity: 0;
     }
 
     .fade-in-left {
@@ -109,6 +125,7 @@
 
 <div id="card-container">
   <div id="card-name"></div>
+  <div id="card-placeholder"></div>
   <img id="card-image" src="" alt="Karta Pokémon" />
 </div>
 
@@ -124,22 +141,41 @@
   function showCard(card) {
     const nameEl = document.getElementById("card-name");
     const imageEl = document.getElementById("card-image");
+    const placeholderEl = document.getElementById("card-placeholder");
 
     return new Promise(resolve => {
-      nameEl.textContent = card.name;
-      imageEl.src = card.image;
+      nameEl.textContent = card.name + (card.number ? ` (${card.number})` : "");
 
+      if (card.image) {
+        imageEl.src = card.image;
+        imageEl.style.display = "block";
+        placeholderEl.style.display = "none";
+        imageEl.className = "fade-in-left";
+      } else {
+        placeholderEl.textContent = `${card.name} (${card.number})`;
+        placeholderEl.style.display = "flex";
+        imageEl.style.display = "none";
+        placeholderEl.className = "fade-in-left";
+      }
       nameEl.className = "fade-in-left";
-      imageEl.className = "fade-in-left";
 
       setTimeout(() => {
         nameEl.className = "fade-out-right";
-        imageEl.className = "fade-out-right";
+        if (card.image) {
+          imageEl.className = "fade-out-right";
+        } else {
+          placeholderEl.className = "fade-out-right";
+        }
       }, 3000);
 
       setTimeout(() => {
         nameEl.className = "";
-        imageEl.className = "";
+        if (card.image) {
+          imageEl.className = "";
+        } else {
+          placeholderEl.className = "";
+          placeholderEl.style.display = "none";
+        }
         resolve();
       }, 4000);
     });

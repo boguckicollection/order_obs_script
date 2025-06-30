@@ -67,6 +67,7 @@ Wymagane są zmienne `YT_API_KEY` oraz `YT_CHANNEL_ID` w pliku `.env`. Wynik zos
 - **karty.html** – wyświetla nazwy i grafiki kart Pokémon z najnowszego zamówienia.
 
 Do wyszukiwania kart wykorzystywany jest teraz identyfikator `set.id`, dzięki czemu możliwe jest odnalezienie kart z zagranicznych wersji zestawów.
+Jeżeli danej karty nie uda się odnaleźć w API, jej nazwa wraz z numerem zostanie pokazana w ramce o proporcjach prawdziwej karty.
 
 Pliki te można dodać jako źródło przeglądarki w OBS.
 
